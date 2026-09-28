@@ -1,13 +1,13 @@
 # Sortir — billetterie en ligne
 
-Première démonstration du cahier des charges : site responsive en français, recherche et filtres, catalogue d'événements, détail, choix des billets et formulaire acheteur.
+Vitrine responsive en français publiée sur GitHub Pages : https://sylveremahan.github.io/sortir-billetterie/ . Catalogue de démonstration, recherche, filtres, détails des événements et formulaire acheteur.
 
-Ouvrir index.html dans un navigateur. Images hébergées par Unsplash.
+## Paiements
 
-## Limites actuelles
+Un premier backend Paystack est présent dans `api/`. Il utilise PostgreSQL pour le catalogue, les réservations de stock, les commandes et l'émission interne de codes 8 chiffres et de jetons QR après vérification. Il doit être déployé séparément du site statique. Le checkout public reste en mode démonstration tant que l'API n'a pas été déployée, raccordée au frontend et configurée avec des données réelles.
 
-Achat simulé uniquement : pas de serveur, base de données, comptes, paiement Mobile Money, PDF/QR/code billet, contrôle ni gestion réelle des stocks. Aucun paiement n'a lieu et aucun billet valide n'est généré.
+Consulter [api/README.md](api/README.md) pour le schéma, les secrets d'environnement, le webhook et les étapes restantes. Aucun secret réel n'est stocké dans le dépôt.
 
-Avant toute vente : développer backend et base de données, authentification et rôles, réservations atomiques à expiration, paiement Mobile Money et vérification serveur des notifications, émission sécurisée après confirmation, QR tokenisé et codes à usage unique, contrôle/journaux, notifications et conformité aux règles applicables aux données et remboursements.
+## Limites
 
-L'hébergement, le domaine et le compte de déploiement ne sont pas encore configurés.
+Aucune intégration Paystack réelle n'est encore activée. Il faut un compte marchand validé, une clé de test configurée dans l'hébergeur du backend, une base PostgreSQL, un hôte HTTPS et les événements/tarifs/quantités exacts. Les billets ne sont pas encore envoyés par courriel ni accessibles dans un espace client.
