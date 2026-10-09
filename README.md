@@ -11,3 +11,7 @@ Consulter [api/README.md](api/README.md) pour le schéma, les secrets d'environn
 ## Limites
 
 Aucune intégration Paystack réelle n'est encore activée. Il faut un compte marchand validé, une clé de test configurée dans l'hébergeur du backend, une base PostgreSQL, un hôte HTTPS et les événements/tarifs/quantités exacts. Les billets ne sont pas encore envoyés par courriel ni accessibles dans un espace client.
+
+## Billetterie de l’événement Festin du Lapin
+
+Une version distincte avec authentification serveur, billets et check-in centralisés est disponible dans `vercel-festin/`. Ce dossier est la racine Vercel à sélectionner lors de l’import du dépôt. Il utilise le schéma `vercel-festin/schema.sql` et ses propres identifiants hachés; il n’est pas relié au paiement Paystack. Lire [vercel-festin/README.md](vercel-festin/README.md) pour le déploiement, la migration de l’ancienne base et les exigences HTTPS.

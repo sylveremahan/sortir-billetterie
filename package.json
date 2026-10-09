@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node api/server.mjs"
+    "start": "node api/server.mjs",
+    "start:festin": "node api/festin-server.mjs",
+    "festin:password-hash": "node vercel-festin/password-hash.mjs"
   },
   "engines": { "node": ">=20" },
   "dependencies": {
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "qrcode": "^1.5.4"
   }
 }

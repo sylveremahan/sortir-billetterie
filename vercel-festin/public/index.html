@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Billetterie — Le Festin du Lapin & des Générations</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <section id="login-screen" class="login-screen" aria-labelledby="login-title">
+    <form id="login-form" class="login-card">
+      <p class="eyebrow">Billetterie sécurisée</p>
+      <h1 id="login-title">Le Festin du Lapin<br>& des Générations</h1>
+      <p class="muted">Connectez-vous avec votre compte opérateur.</p>
+      <label for="username">Identifiant</label>
+      <input id="username" name="username" autocomplete="username" required maxlength="40">
+      <label for="password">Mot de passe</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024">
+      <button class="primary" type="submit">Se connecter</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+  </section>
+
+  <div id="app" class="hidden">
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">Billetterie numérique</p>
+        <h1>Le Festin du Lapin <span>&</span> des Générations</h1>
+        <p class="muted">31 octobre 2026 · Angré, quartier de la Djorobité 2, Carrefour Cabri</p>
+      </div>
+      <div class="account-bar">
+        <span id="role-label" class="role"></span>
+        <button id="logout" class="secondary" type="button">Déconnexion</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Navigation billetterie">
+      <button class="tab active" data-panel="checkin-panel" type="button">Scanner / vérifier</button>
+      <button class="tab admin-only" data-panel="create-panel" type="button">Créer un billet</button>
+      <button class="tab admin-only" data-panel="history-panel" type="button">Historique</button>
+    </nav>
+
+    <main>
+      <section id="checkin-panel" class="panel active">
+        <div class="two-column">
+          <article class="card">
+            <h2>Scanner un QR code</h2>
+            <div class="camera-frame">
+              <video id="camera" playsinline muted class="hidden"></video>
+              <p id="camera-hint" class="camera-hint">La caméra nécessite HTTPS et votre autorisation.</p>
+            </div>
+            <div class="button-row">
+              <button id="start-camera" class="primary" type="button">Démarrer le scan</button>
+              <button id="stop-camera" class="secondary hidden" type="button">Arrêter</button>
+            </div>
+            <p id="camera-message" class="muted" aria-live="polite"></p>
+          </article>
+          <article class="card">
+            <h2>Vérifier un code billet</h2>
+            <form id="lookup-form">
+              <label for="ticket-code">Code imprimé sur le billet</label>
+              <input id="ticket-code" autocomplete="off" maxlength="14" placeholder="J-000000000000" required>
+              <button class="primary" type="submit">Vérifier</button>
+            </form>
+            <div id="checkin-result" aria-live="polite"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="create-panel" class="panel admin-only">
+        <div class="two-column">
+          <article class="card">
+            <h2>Créer un billet</h2>
+            <form id="ticket-form">
+              <label for="buyer-name">Nom du titulaire</label>
+              <input id="buyer-name" required maxlength="120" autocomplete="name">
+              <label for="buyer-phone">Téléphone</label>
+              <input id="buyer-phone" required maxlength="40" autocomplete="tel" inputmode="tel">
+              <fieldset>
+                <legend>Pass</legend>
+                <label class="pass-choice"><input type="radio" name="pass" value="jeunesse" required><span>Jeunesse — 5 000 FCFA<br><small>Plat de lapin + cocktail</small></span></label>
+                <label class="pass-choice"><input type="radio" name="pass" value="doyen"><span>Doyen — 10 000 FCFA<br><small>Plat + cocktail + une coupe</small></span></label>
+              </fieldset>
+              <button class="primary" type="submit">Créer et enregistrer</button>
+              <p id="create-message" role="status" class="muted"></p>
+            </form>
+          </article>
+          <article class="card">
+            <h2>Aperçu du billet</h2>
+            <div id="ticket-preview" class="preview-empty">Le nouveau billet apparaîtra ici.</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="history-panel" class="panel admin-only">
+        <div id="stats" class="stats"></div>
+        <article class="card">
+          <div class="history-toolbar">
+            <h2>Billets émis</h2>
+            <div class="button-row">
+              <input id="history-search" aria-label="Rechercher dans les billets" placeholder="Nom, téléphone ou code">
+              <button id="refresh-history" class="secondary" type="button">Actualiser</button>
+              <button id="export-history" class="secondary" type="button">Exporter JSON</button>
+              <button id="import-history" class="secondary" type="button">Importer l’ancienne base</button>
+              <input id="import-file" type="file" accept="application/json,.json" hidden>
+            </div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Code</th><th>Titulaire</th><th>Téléphone</th><th>Pass</th><th>Prix</th><th>Date</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="history-body"></tbody></table></div>
+          <p id="history-message" class="muted" role="status"></p>
+        </article>
+      </section>
+    </main>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </div>
+</body>
+</html>

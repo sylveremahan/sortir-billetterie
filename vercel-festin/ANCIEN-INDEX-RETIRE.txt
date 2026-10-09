@@ -1,0 +1,9 @@
+VERSION LOCALE RETIREE — NE PAS UTILISER POUR VENDRE OU VALIDER DES BILLETS
+
+Cette page autonome conservait les billets et les rôles dans le navigateur. Elle ne garantit pas l'authentification, la synchronisation entre appareils ni la prévention des doubles entrées.
+
+La nouvelle version serveur se trouve dans le dossier du projet, sous vercel-festin/. Elle nécessite PostgreSQL, des mots de passe hachés configurés côté serveur et un hébergement HTTPS pour l'usage réel.
+
+Consultez vercel-festin/README.md. Importez ce dossier comme racine du projet Vercel, configurez la base et les secrets serveur, puis déployez.
+
+La nouvelle page sera servie à l'adresse configurée dans APP_ORIGIN. N'utilisez pas une copie HTML locale de l'ancienne page.

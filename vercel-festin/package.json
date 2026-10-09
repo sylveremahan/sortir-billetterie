@@ -1,0 +1,19 @@
+{
+  "name": "festin-billetterie",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "password-hash": "node password-hash.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.3",
+    "qrcode": "^1.5.4"
+  }
+}
