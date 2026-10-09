@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -7,6 +8,7 @@ import QRCode from 'qrcode';
 
 const { Pool } = pg;
 const app = express();
+const publicDirectory = fileURLToPath(new URL('./public/', import.meta.url));
 const vercelEnvironment = process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
 const isProduction = vercelEnvironment === 'production';
 const isHosted = process.env.VERCEL === '1' && vercelEnvironment !== 'development';
@@ -356,6 +358,7 @@ app.post('/api/check-in/confirm', requireSession, requireRole('admin', 'verifier
   } finally { client.release(); }
 });
 
+app.use(express.static(publicDirectory, { index: 'index.html', fallthrough: true }));
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Route inconnue.' }));
 app.use((_req, res) => res.status(404).send('Page introuvable.'));
 app.use((error, _req, res, _next) => {
