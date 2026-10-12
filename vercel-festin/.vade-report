@@ -1,0 +1,45 @@
+## Vercel Speed Insights Integration
+
+Successfully installed and configured Vercel Speed Insights for this Express.js application with static HTML frontend.
+
+### What was implemented:
+
+1. **Package Installation**
+   - Installed `@vercel/speed-insights` version 2.0.0
+   - Updated package.json with the new dependency
+   - Generated package-lock.json for dependency consistency
+
+2. **HTML Integration** (public/index.html)
+   - Added Speed Insights initialization script in the <head> section
+   - Added the deferred Speed Insights script that loads from `/_vercel/speed-insights/script.js`
+   - Used the HTML/Static sites integration method as documented in Vercel's official quickstart guide
+
+3. **Content Security Policy Updates** (vercel.json)
+   - Updated CSP `connect-src` directive to allow connections to `https://vitals.vercel-insights.com`
+   - Updated CSP `script-src` directive to include `'unsafe-inline'` (required for the inline initialization script)
+   - These changes ensure Speed Insights can properly collect and send performance data
+
+### Files Modified:
+- `package.json` - Added @vercel/speed-insights dependency
+- `package-lock.json` - New file with locked dependency versions
+- `public/index.html` - Added Speed Insights scripts
+- `vercel.json` - Updated Content-Security-Policy headers
+
+### Implementation Details:
+
+This project is an Express.js backend serving static HTML files. Following the official Vercel Speed Insights quickstart guide for HTML/Static sites, I:
+
+1. Fetched the latest documentation from https://vercel.com/docs/speed-insights/quickstart
+2. Identified the correct integration method for static HTML sites
+3. Added the inline window.si initialization function
+4. Added the deferred script that points to Vercel's Speed Insights endpoint
+5. Updated security headers to allow the Speed Insights service to function properly
+
+The Speed Insights will automatically start collecting Web Vitals data (LCP, FID, CLS, etc.) once the application is deployed to Vercel. The data will be visible in the Vercel dashboard under the Speed Insights section after users visit the site.
+
+### Notes:
+
+- The server requires environment variables (APP_ORIGIN, DATABASE_URL, etc.) to run, so I couldn't perform a full integration test, but the syntax and configuration are correct
+- No lint or test scripts were configured in the project, so those steps were skipped
+- The integration follows Vercel's official documentation and best practices
+- Speed Insights data will only be collected when the app is deployed to Vercel's platform
