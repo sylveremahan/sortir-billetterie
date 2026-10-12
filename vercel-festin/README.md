@@ -36,7 +36,7 @@ Ne pas définir `APP_ORIGIN` sur Vercel : le serveur prend l’origine de l’UR
 
 Lancer **Deploy**. Après le premier déploiement réussi, ouvrir l’URL de production du projet. Se connecter avec `admin` pour créer et gérer les billets, ou `verif` pour contrôler les entrées. Les previews disposent de leur propre origine Vercel ; elles utilisent la même base si `DATABASE_URL` est configurée en Preview. Pour éviter qu’une preview ne modifie les données réelles, il est recommandé de créer une base Neon de préproduction et de la configurer uniquement dans l’environnement Preview.
 
-La caméra nécessite HTTPS ; la saisie manuelle du code reste disponible comme solution de repli.
+Le scan utilise `BarcodeDetector` lorsqu’il est disponible et le décodeur JavaScript local `jsqr` en solution de repli. La caméra est demandée uniquement lorsque l’opérateur démarre le scan, sans accès au microphone; le navigateur doit autoriser la caméra pour ce site. Le décodage est fait sur l’appareil. HTTPS est requis et la saisie manuelle reste disponible en cas de refus ou d’indisponibilité de la caméra.
 
 ## Migrer les billets déjà émis
 

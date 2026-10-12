@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
@@ -8,6 +9,8 @@ import QRCode from 'qrcode';
 
 const { Pool } = pg;
 const app = express();
+const require = createRequire(import.meta.url);
+const jsQrBundlePath = require.resolve('jsqr');
 const publicDirectory = fileURLToPath(new URL('./public/', import.meta.url));
 const vercelEnvironment = process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
 const isProduction = vercelEnvironment === 'production';
@@ -346,18 +349,21 @@ app.post('/api/check-in/confirm', requireSession, requireRole('admin', 'verifier
       );
       await client.query('ROLLBACK');
       return existing.rows[0]
-        ? res.status(409).json({ error: existing.rows[0].status === 'used' ? 'Billet déjà utilisé.' : 'Billet annulé.', ticket: ticketForCheckin(existing.rows[0]) })
+        ? res.status(409).json({ error: existing.rows[0].status === 'used' ? 'Billet déjà validé : entrée déjà enregistrée.' : 'Billet annulé.', ticket: ticketForCheckin(existing.rows[0]) })
         : res.status(404).json({ error: 'Billet introuvable.' });
     }
     await client.query('INSERT INTO festin_audit_log (actor,action,ticket_id,ticket_code) VALUES ($1,$2,$3,$4)', [req.session.username, 'check_in', rows[0].id, rows[0].ticket_code]);
     await client.query('COMMIT');
-    res.json({ message: 'Entrée enregistrée.', ticket: ticketForCheckin(rows[0]) });
+    res.json({ message: 'Billet validé : entrée enregistrée.', ticket: ticketForCheckin(rows[0]) });
   } catch {
     await client.query('ROLLBACK').catch(() => {});
     res.status(503).json({ error: 'Enregistrement de l’entrée impossible.' });
   } finally { client.release(); }
 });
 
+app.get('/vendor/jsqr.js', (_req, res, next) => {
+  res.sendFile(jsQrBundlePath, error => { if (error) next(error); });
+});
 app.use(express.static(publicDirectory, { index: 'index.html', fallthrough: true }));
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Route inconnue.' }));
 app.use((_req, res) => res.status(404).send('Page introuvable.'));

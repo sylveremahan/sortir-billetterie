@@ -18,6 +18,9 @@ let pendingCheckinValue = '';
 let cameraStream = null;
 let barcodeDetector = null;
 let scanning = false;
+let lastScanAt = 0;
+const scanCanvas = document.createElement('canvas');
+const scanContext = scanCanvas.getContext('2d', { willReadFrequently: true });
 let searchTimer;
 
 function showLogin(message = '') {
@@ -109,7 +112,10 @@ function renderTicketPreview(ticket, qrDataUrl) {
   pass.textContent = `${ticket.passLabel} · ${money(ticket.price)}`;
   const date = document.createElement('p');
   date.textContent = '31 octobre 2026 · Angré, Carrefour Cabri';
-  card.append(event, code, qr, name, pass, date);
+  const status = document.createElement('p');
+  status.className = 'ticket-status pending';
+  status.textContent = 'NON VALIDÉ — à présenter pour contrôle à l’entrée';
+  card.append(event, code, qr, name, pass, date, status);
   holder.append(card);
   const actions = document.createElement('div');
   actions.className = 'button-row ticket-actions';
@@ -156,9 +162,9 @@ function renderCheckinResult(ticket, successMessage = '') {
   const result = $('#checkin-result');
   result.replaceChildren();
   const box = document.createElement('div');
-  box.className = `checkin-result ${ticket.status === 'valid' ? 'valid' : ticket.status}`;
+  box.className = `checkin-result ${ticket.status === 'valid' ? 'pending' : ticket.status}`;
   const title = document.createElement('strong');
-  title.textContent = successMessage || (ticket.status === 'valid' ? 'Billet valide — entrée à confirmer' : ticket.status === 'used' ? 'Billet déjà utilisé' : 'Billet annulé');
+  title.textContent = successMessage || (ticket.status === 'valid' ? 'Billet non validé — confirmez le contrôle' : ticket.status === 'used' ? 'Billet déjà validé — entrée déjà enregistrée' : 'Billet annulé');
   const details = document.createElement('p');
   details.textContent = `${ticket.buyerName} · ${ticket.passLabel} · ${ticket.code}`;
   box.append(title, details);
@@ -169,7 +175,7 @@ function renderCheckinResult(ticket, successMessage = '') {
   }
   if (ticket.status === 'valid') {
     const confirm = document.createElement('button');
-    confirm.className = 'primary'; confirm.type = 'button'; confirm.textContent = 'Confirmer l’entrée';
+    confirm.className = 'primary'; confirm.type = 'button'; confirm.textContent = 'Valider le billet et enregistrer l’entrée';
     confirm.addEventListener('click', async () => {
       confirm.disabled = true;
       try {
@@ -218,7 +224,7 @@ function renderHistory(data) {
     for (const value of values) { const cell = document.createElement('td'); cell.textContent = value; row.append(cell); }
     const status = document.createElement('td');
     status.className = `status-${ticket.status}`;
-    status.textContent = ticket.status === 'valid' ? 'Valide' : ticket.status === 'used' ? `Entré · ${formatDate(ticket.checkedInAt)}` : 'Annulé';
+    status.textContent = ticket.status === 'valid' ? 'Non validé' : ticket.status === 'used' ? `Validé · ${formatDate(ticket.checkedInAt)}` : 'Annulé';
     row.append(status);
     const actions = document.createElement('td');
     const group = document.createElement('div'); group.className = 'row-actions';
@@ -247,7 +253,7 @@ async function reissueQr(ticket) {
 async function cancelTicket(ticket) {
   if (!window.confirm(`Annuler le billet ${ticket.code} de ${ticket.buyerName} ? Cette action sera enregistrée dans le journal.`)) return;
   try {
-    await api(`/api/tickets/${encodeURIComponent(ticket.id)}`, { method: 'DELETE' });
+    await api(`/api/tickets/${encodeURIComponent(ticket.id)}`, { method: 'DELETE', body: '{}' });
     toast(`Billet ${ticket.code} annulé.`);
     loadHistory();
   } catch (error) { toast(error.message); }
@@ -294,37 +300,72 @@ async function startCamera() {
     message.textContent = 'La caméra nécessite HTTPS. Saisissez le code du billet manuellement.';
     return;
   }
-  if (!('BarcodeDetector' in window)) {
-    message.textContent = 'La lecture QR automatique n’est pas disponible dans ce navigateur. Utilisez la saisie manuelle.';
+  barcodeDetector = null;
+  if ('BarcodeDetector' in window) {
+    try {
+      const formats = await BarcodeDetector.getSupportedFormats();
+      if (formats.includes('qr_code')) barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+    } catch { /* Le décodeur JavaScript local sert de solution de repli. */ }
+  }
+  if (!barcodeDetector && typeof window.jsQR !== 'function') {
+    message.textContent = 'Le lecteur QR n’a pas pu se charger. Rechargez la page ou saisissez le code manuellement.';
     return;
   }
   try {
-    barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+    } catch (cameraError) {
+      if (!['OverconstrainedError', 'NotFoundError'].includes(cameraError?.name)) throw cameraError;
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
     const video = $('#camera'); video.srcObject = cameraStream; video.classList.remove('hidden');
     $('#camera-hint').classList.add('hidden'); $('#start-camera').classList.add('hidden'); $('#stop-camera').classList.remove('hidden');
     scanning = true;
     await video.play();
     scanLoop();
   } catch {
-    message.textContent = 'Impossible d’ouvrir la caméra. Vérifiez la permission ou utilisez la saisie manuelle.';
+    message.textContent = 'Accès caméra impossible. Autorisez la caméra pour ce site dans le navigateur, fermez les autres applis qui l’utilisent, ou saisissez le code manuellement.';
     stopCamera();
   }
 }
 
-async function scanLoop() {
+async function scanLoop(timestamp = 0) {
   if (!scanning) return;
-  try {
-    const codes = await barcodeDetector.detect($('#camera'));
-    if (codes.length) {
-      const raw = codes[0].rawValue;
+  if (timestamp - lastScanAt >= 180) {
+    lastScanAt = timestamp;
+    try {
+      const video = $('#camera');
+      let raw = '';
+      if (barcodeDetector) {
+        try {
+          const codes = await barcodeDetector.detect(video);
+          raw = codes[0]?.rawValue || '';
+        } catch { barcodeDetector = null; }
+      }
+      if (!raw && !barcodeDetector && video.videoWidth && video.videoHeight && typeof window.jsQR === 'function') {
+        const scale = Math.min(1, 720 / video.videoWidth);
+        scanCanvas.width = Math.round(video.videoWidth * scale);
+        scanCanvas.height = Math.round(video.videoHeight * scale);
+        scanContext.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+        const pixels = scanContext.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+        raw = window.jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'dontInvert' })?.data || '';
+      }
+      if (raw) {
+        stopCamera();
+        $('#camera-message').textContent = 'QR code détecté.';
+        $('#ticket-code').value = raw;
+        await lookupTicket(raw);
+        return;
+      }
+    } catch {
+      $('#camera-message').textContent = 'Lecture interrompue. Autorisez la caméra ou saisissez le code manuellement.';
       stopCamera();
-      $('#camera-message').textContent = 'QR code détecté.';
-      $('#ticket-code').value = raw;
-      await lookupTicket(raw);
       return;
     }
-  } catch { $('#camera-message').textContent = 'Lecture interrompue. Vous pouvez saisir le code manuellement.'; stopCamera(); return; }
+  }
   if (scanning) requestAnimationFrame(scanLoop);
 }
 
